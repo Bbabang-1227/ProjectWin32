@@ -1,0 +1,9 @@
+﻿Practice_Bingo.obj : error LNK2005: "int __cdecl InitInstance(struct HINSTANCE__ *,int)" (?InitInstance@@YAHPAUHINSTANCE__@@H@Z)이(가) 8.ChildWindow.obj에 이미 정의되어 있습니다.
+Practice_Bingo.obj : error LNK2005: "unsigned short __cdecl MyRegisterClass(struct HINSTANCE__ *)" (?MyRegisterClass@@YAGPAUHINSTANCE__@@@Z)이(가) 8.ChildWindow.obj에 이미 정의되어 있습니다.
+Practice_Bingo.obj : error LNK2005: "long __stdcall WndProc(struct HWND__ *,unsigned int,unsigned int,long)" (?WndProc@@YGJPAUHWND__@@IIJ@Z)이(가) 8.ChildWindow.obj에 이미 정의되어 있습니다.
+Practice_Bingo.obj : error LNK2005: _wWinMain@16이(가) 8.ChildWindow.obj에 이미 정의되어 있습니다.
+Practice_Bingo.obj : error LNK2005: "struct HINSTANCE__ * hInst" (?hInst@@3PAUHINSTANCE__@@A)이(가) 8.ChildWindow.obj에 이미 정의되어 있습니다.
+Practice_Bingo.obj : error LNK2005: "wchar_t * szTitle" (?szTitle@@3PA_WA)이(가) 8.ChildWindow.obj에 이미 정의되어 있습니다.
+Practice_Bingo.obj : error LNK2005: "wchar_t * szWindowClass" (?szWindowClass@@3PA_WA)이(가) 8.ChildWindow.obj에 이미 정의되어 있습니다.
+Practice_Bingo.obj : error LNK2005: "struct HWND__ * hC1" (?hC1@@3PAUHWND__@@A)이(가) 8.ChildWindow.obj에 이미 정의되어 있습니다.
+C:\Users\BIT\source\repos\ProjectWindows\Debug\ProjectWindows.exe : fatal error LNK1169: 여러 번 정의된 기호가 있습니다.

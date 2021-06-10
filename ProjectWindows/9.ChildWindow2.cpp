@@ -10,9 +10,6 @@
 
 #define MAX_LOADSTRING 100
 #define MAX_LOADSTRING2 'windowkiki'
-#define MAX 5
-
-#define WM_CHECKBINGO WM_USER + 1
 
 // 전역 변수:
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
@@ -23,31 +20,10 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK    ChildProc(HWND, UINT, WPARAM, LPARAM); //child
-
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
+LRESULT CALLBACK    ChildProc(HWND, UINT, WPARAM, LPARAM); //child
 HWND hC1;
-HWND g_mainhWnd;
-HWND g_childhWnd[MAX][MAX];
-BOOL g_bMyTurn = TRUE;
-
-int fnCheckandSetBingo(HWND, WPARAM, LPARAM, int);
-
-enum modeBINGO {
-	bingoNONE = 0,
-	bingoMINE,
-	bingoMyBINGO,
-	bingoYOURS,
-	bingoYourBingo
-};
-
-enum userInput {
-	Horizen = 0,
-	Vertical,
-	Diagonal,
-	DiagonalE
-};
 
 int APIENTRY wWinMain(// main
 	_In_ HINSTANCE hInstance, //응용프로그램을 식별하는 값 
@@ -74,6 +50,12 @@ int APIENTRY wWinMain(// main
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PROJECTWINDOWS));
 
+	/*
+	C/C++ 는 함수를 직접 호출하였으며 전체 실행 흐름을 코드에 명시할수있었음
+	그러나 윈도우 프로그래밍은 입력을 예측할수없음(비동기)
+	언제 발생할지 모르는 비동기 입력에 대해 처리가 가능하면서도 화면이 멈추지말아야한다
+	따라서 윈도우 프로그래밍 모델은 Message Driven 방식을 채택
+	*/
 	MSG msg;
 
 	// 기본 메시지 루프입니다:
@@ -89,6 +71,13 @@ int APIENTRY wWinMain(// main
 	return (int)msg.wParam;
 }
 
+
+
+//
+//  함수: MyRegisterClass()
+//
+//  용도: 창 클래스를 등록합니다.
+//
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
 	WNDCLASSEXW wcex;
@@ -118,40 +107,60 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	return 0;
 }
 
+//
+//   함수: InitInstance(HINSTANCE, int)
+//
+//   용도: 인스턴스 핸들을 저장하고 주 창을 만듭니다.
+//
+//   주석:
+//
+//        이 함수를 통해 인스턴스 핸들을 전역 변수에 저장하고
+//        주 프로그램 창을 만든 다음 표시합니다.
+//
+
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
-	g_mainhWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+	HWND mhWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr); // 윈도우를 생성
 
-	if (!g_mainhWnd)
+	if (!mhWnd)
 	{
 		return FALSE;
 	}
 
-	ShowWindow(g_mainhWnd, nCmdShow);
-	UpdateWindow(g_mainhWnd);
+	ShowWindow(mhWnd, nCmdShow);
+	UpdateWindow(mhWnd);
 
 	return TRUE;
 }
 
-
+//
+//  함수: WndProc(HWND, UINT, WPARAM, LPARAM)
+//
+//  용도: 주 창의 메시지를 처리합니다.
+//
+//  WM_COMMAND  - 애플리케이션 메뉴를 처리합니다.
+//  WM_PAINT    - 주 창을 그립니다.
+//  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
+//
+//
+HDC hdc;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-
 	switch (message)
 	{
 	case WM_CREATE:
 	{
-		for (int i = 0; i < MAX; i++)
+		for (int i = 0; i < 3; i++)
 		{
-			for (int j = 0; j < MAX; j++)
+			for (int j = 0; j < 3; j++)
 			{
-				g_childhWnd[i][j] = CreateWindow(
+				hC1 = CreateWindow(
 					_T("lpszClass"), //classname
 					NULL, //windowname // 보통 클래스네임, 윈도우네임 둘중 한개만 부여함
-					WS_CHILD | WS_VISIBLE, //window style
+					WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, //window style
 					0 + 100 * i, //x
 					0 + 100 * j, //y
 					100, //width
@@ -161,19 +170,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					hInst, //
 					NULL
 				);
-
 			}
 		}
+		
 		break;
 	}
-	case WM_COMMAND: {
+	
+	case WM_LBUTTONDOWN:
+	{
+		RECT rct;
+		GetClientRect(hWnd, &rct);
+		TextOut(hdc, 320, 20, _T("집에보내주세요"), 7);
+
+
+		break;
+	}
+	case WM_COMMAND:
+	{
 		int wmId = LOWORD(wParam);
 		// 메뉴 선택을 구문 분석합니다:
 		switch (wmId)
 		{
 		case IDM_ABOUT:
 			//DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			SetProp(hWnd, _T("modeBINGO"), (HANDLE)bingoNONE);
 			break;
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
@@ -182,115 +201,97 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 	}
-					 break;
-
+	break;
+	case WM_KEYDOWN:
+	{
+		switch (wParam)
+		{
+		case VK_SPACE:
+			DestroyWindow(hWnd);
+			break;
+		default:
+			break;
+		}
+	}break;
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hWnd, &ps);
-
+		hdc = BeginPaint(hWnd, &ps);
 		// TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
 		EndPaint(hWnd, &ps);
 	}
 	break;
-
-	case WM_CHECKBINGO:
-	{
-		g_bMyTurn = !g_bMyTurn;
-		if (g_bMyTurn)
-			SetWindowText(hWnd, _T("My Turn"));
-		else
-			SetWindowText(hWnd, _T("Your Turn"));
-
-		fnCheckandSetBingo(hWnd, wParam, lParam, Vertical);
-		fnCheckandSetBingo(hWnd, wParam, lParam, Horizen);
-		fnCheckandSetBingo(hWnd, wParam, lParam, Diagonal);
-		fnCheckandSetBingo(hWnd, wParam, lParam, DiagonalE);
-
-		break;
-	}
-
-	case WM_DESTROY: {
+	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	}
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
 }
 
+BOOL bEllipse = TRUE;
+
 LRESULT CALLBACK ChildProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int mState;
-
+	static HWND hEdit, hBtn;
+	BOOL bProp;
+	
 	switch (message)
 	{
 	case WM_CREATE:
 	{
-		SetProp(hWnd, _T("modeBINGO"), (HANDLE)bingoNONE); //1. 속성 선언
+		SetProp(hWnd, _T("bEllipse"), (HANDLE)TRUE); //1. 속성 선언
+		SetProp(hWnd, _T("nCount"), (HANDLE)3); //속성 선언
+		/*
+		hEdit = CreateWindowW( // 윈도우를 생성
+			_T("edit"), //클래스네임
+			NULL, // 윈도우네임
+			WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, // 윈도우 스타일
+			210, 10, 80, 25, // 사이즈
+			hWnd, // 부모
+			(HMENU)1, // ID부여
+			hInst,
+			NULL);
+		hBtn = CreateWindowW( // 윈도우를 생성
+			_T("button"), //클래스네임
+			_T("Add"), // 윈도우네임
+			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, // 윈도우 스타일
+			210, 50, 80, 25, // 사이즈
+			hWnd, // 부모
+			(HMENU)2, // ID부여
+			hInst,
+			NULL);
+		*/
+		
 		break;
 	}
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hWnd, &ps);
-		// TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...	
-
-
-		mState = (int)GetProp(hWnd, _T("modeBINGO"));
-		if (mState == bingoNONE)
+		HDC hdc2 = BeginPaint(hWnd, &ps);
+		// TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...		
+		bProp = (BOOL)GetProp(hWnd, _T("bEllipse"));
+		if (bProp)
 		{
-			Rectangle(hdc, 10, 10, 80, 80);
-		}
-		else if (mState == bingoMINE)
-		{
-			Ellipse(hdc, 10, 10, 80, 80);
-
-		}
-		else if (mState == bingoYOURS)
-		{
-			MoveToEx(hdc, 10, 10, NULL);
-			LineTo(hdc, 90, 90);
-			MoveToEx(hdc, 90, 10, NULL);
-			LineTo(hdc, 10, 90);
-
-		}
-		else if (mState == bingoMyBINGO)
-		{
-			HBRUSH MyBr2 = (HBRUSH)GetStockObject(DKGRAY_BRUSH);
-			SelectObject(hdc, MyBr2);
-			Ellipse(hdc, 10, 10, 80, 80);
-
+			Ellipse(hdc2, 10, 10, 90, 90);
 		}
 		else
 		{
-			HBRUSH MyBr2 = CreateSolidBrush(RGB(255, 0, 0));
-			SelectObject(hdc, MyBr2);
-			Rectangle(hdc, 10, 10, 80, 80);
+			MoveToEx(hdc2, 10, 10, NULL);
+			LineTo(hdc2, 90, 90);
+			MoveToEx(hdc2, 90, 10, NULL);
+			LineTo(hdc2, 10, 90);
 		}
+
 		EndPaint(hWnd, &ps);
 		break;
 	}
 	case WM_LBUTTONDOWN:
 	{
-
-		mState = (int)GetProp(hWnd, _T("modeBINGO"));
-		if (mState == bingoNONE)
-		{
-			int nMode;
-			if (g_bMyTurn)
-			{
-				nMode = bingoMINE;
-			}
-			else
-			{
-				nMode = bingoYOURS;
-			}
-			SetProp(hWnd, _T("modeBINGO"), (HANDLE)nMode);
-			SendMessage(g_mainhWnd, WM_CHECKBINGO, (WPARAM)hWnd, nMode);
-
-		}
+		//bEllipse = !bEllipse;
+		bProp = (BOOL)GetProp(hWnd, _T("bEllipse"));
+		SetProp(hWnd, _T("bEllipse"),	(HANDLE)!bProp);
 		InvalidateRect(hWnd, NULL, TRUE);
 		break;
 	}
@@ -306,110 +307,6 @@ LRESULT CALLBACK ChildProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 }
 // 정보 대화 상자의 메시지 처리기입니다.
 
-int fnCheckandSetBingo(HWND hWnd, WPARAM wParam, LPARAM lParam, int nUserinput)
-{
-	HWND hChild = (HWND)wParam;
-	int nCurMode = (int)lParam;
-
-	int nx = -1;
-	int ny = -1;
-	int nTrig = 0;
-
-	//위치체크
-	for (int i = 0; i < MAX; i++) {
-		for (int j = 0; j < MAX; j++) {
-			if (g_childhWnd[i][j] == hChild)
-			{
-				nx = i;
-				ny = j;
-				break;
-			}
-		}
-	}
-	if (nx < 0 || ny < 0) return 0;
-	int nTemp;
-	int nXParam, nYParam;
-	//가로 빙고 체크
-	for (int i = 0; i < MAX; i++)
-	{
-		switch (nUserinput)
-		{
-		case Horizen:
-		{
-			nXParam = i;
-			nYParam = ny;
-			break;
-		}
-		case Vertical:
-		{
-			nXParam = nx;
-			nYParam = i;
-			break;
-		}
-		case Diagonal:
-		{
-			nXParam = i;
-			nYParam = i;
-			break;
-		}
-		case DiagonalE:
-		{
-			nXParam = i;
-			nYParam = MAX - i - 1;
-			break;
-		}
-		default:
-			break;
-		}
-
-		nTemp = (int)GetProp(g_childhWnd[nXParam][nYParam], _T("modeBINGO"));
-		if (nTemp == nCurMode || nTemp == nCurMode + 1)
-		{
-			nTrig++;
-		}
-	}
-
-	if (nTrig == MAX)
-	{
-		for (int i = 0; i < MAX; i++)
-		{
-			switch (nUserinput)
-			{
-			case Horizen:
-			{
-				nXParam = i;
-				nYParam = ny;
-				break;
-			}
-			case Vertical:
-			{
-				nXParam = nx;
-				nYParam = i;
-				break;
-			}
-			case Diagonal:
-			{
-				nXParam = i;
-				nYParam = i;
-				break;
-			}
-			case DiagonalE:
-			{
-				nXParam = i;
-				nYParam = MAX - i - 1;
-				break;
-			}
-			default:
-				break;
-			}
-			SetProp(g_childhWnd[nXParam][nYParam], _T("modeBINGO"), (HANDLE)(nCurMode + 1));//빙고
-			InvalidateRect(hWnd, NULL, TRUE);
-		}
-	}
-	nTrig = 0;
-	return 0;
-}
 
 #endif  
-
 

@@ -1,6 +1,6 @@
 // ProjectWindows.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
-#define ON_MAIN
+//#define ON_MAIN
 #ifdef ON_MAIN
 // ProjectWindows.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
@@ -21,14 +21,6 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-////////////////////////
-//1.사용자 윈도우 프로시저 선언
-LRESULT CALLBACK    UserProc(HWND, UINT, WPARAM, LPARAM);
-
-////////////////////////
-//2.사용자 윈도우 핸들러 선언
-HWND hC1;
 
 int APIENTRY wWinMain(// main
 	_In_ HINSTANCE hInstance, //응용프로그램을 식별하는 값 
@@ -76,11 +68,18 @@ int APIENTRY wWinMain(// main
 	return (int)msg.wParam;
 }
 
+
+
+//
+//  함수: MyRegisterClass()
+//
+//  용도: 창 클래스를 등록합니다.
+//
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
 	WNDCLASSEXW wcex;
 
-	wcex.cbSize = sizeof(WNDCLASSEX); // 콜백이 있는 함수는 콜백을 먼저 실행해줘야함
+	wcex.cbSize = sizeof(WNDCLASSEX);
 
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
 	wcex.lpfnWndProc = WndProc;
@@ -93,23 +92,20 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_PROJECTWINDOWS);
 	wcex.lpszClassName = szWindowClass;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
-	////////////////////////
-	//3.레지스터 등록함수 리턴에서 가져오기
-	RegisterClassExW(&wcex); 
 
-	////////////////////////
-	//4.사용자 윈도우 레지스터에 등록
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1); // 배경
-	wcex.lpfnWndProc = UserProc; //프로시저연결
-	wcex.hCursor = LoadCursor(nullptr, IDC_CROSS); // 커서 설정
-	wcex.lpszClassName = _T("UserProcClass"); //클래스네임설정
-	RegisterClassExW(&wcex); //레지스터 등록
-
-	////////////////////////
-	//3.1
-	return 0; 
+	return RegisterClassExW(&wcex);
 }
 
+//
+//   함수: InitInstance(HINSTANCE, int)
+//
+//   용도: 인스턴스 핸들을 저장하고 주 창을 만듭니다.
+//
+//   주석:
+//
+//        이 함수를 통해 인스턴스 핸들을 전역 변수에 저장하고
+//        주 프로그램 창을 만든 다음 표시합니다.
+//
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
@@ -128,27 +124,29 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
+//
+//  함수: WndProc(HWND, UINT, WPARAM, LPARAM)
+//
+//  용도: 주 창의 메시지를 처리합니다.
+//
+//  WM_COMMAND  - 애플리케이션 메뉴를 처리합니다.
+//  WM_PAINT    - 주 창을 그립니다.
+//  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
+//
+//
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static HBRUSH hRed, hGreen, hBlue;
+	static HBRUSH NowBrush;
+
 	switch (message)
 	{
 	case WM_CREATE:
 	{
-		////////////////////////
-		//5. 원하는 시기에 윈도우 핸들러변수를 이용해 윈도우생성
-		hC1 = CreateWindow(
-			_T("UserProcClass"), //classname
-			NULL, //windowname // 보통 클래스네임, 윈도우네임 둘중 한개만 부여함
-			WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_BORDER, //window style
-			0, //x
-			0, //y
-			100, //width
-			200, //height
-			hWnd, //부모핸들
-			(HMENU)0, //메뉴
-			hInst, //
-			NULL
-		);
+		hRed = CreateSolidBrush(RGB(255, 0, 0));
+		hGreen = CreateSolidBrush(RGB(0, 255, 0));
+		hBlue = CreateSolidBrush(RGB(0, 0, 255));
+		NowBrush = hRed;
 		break;
 	}
 	case WM_COMMAND:
@@ -168,6 +166,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 	}
 	break;
+	
 	case WM_KEYDOWN:
 	{
 		switch (wParam)
@@ -175,10 +174,62 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case VK_SPACE:
 			DestroyWindow(hWnd);
 			break;
+		case VK_UP:
+			SetWindowPos(hWnd, NULL, 0, 0, 100, 100,
+				SWP_NOZORDER | SWP_NOSIZE);
+			break;
+		case VK_DOWN:
+			SetWindowPos(hWnd, NULL, 100, 100, 500, 500,
+				SWP_NOZORDER | SWP_NOSIZE);
+			break;
+		case VK_LEFT:
+			if (NowBrush == hRed)
+			{
+				NowBrush = hGreen;
+			}
+			else if (NowBrush == hGreen)
+			{
+				NowBrush = hBlue;
+			}
+			else
+			{
+				NowBrush = hRed;
+			}
+			SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, (LONG)NowBrush);
+			InvalidateRect(hWnd, NULL, TRUE);
+			break;
+		case 'N':
+		case 'n':
+		{
+			HWND hNote = FindWindow(_T("NotePad"), NULL);
+			if (hNote)
+			{
+				SendMessage(hNote, WM_CLOSE, 0, 0);
+			}
+			else
+			{
+				SendMessage(hNote, WM_ACTIVATE, 0, 0);
+				MessageBox(hWnd, _T("fuckyou"), _T("fuck"), MB_OK);
+			}
+			break;
+		}
+		
 		default:
 			break;
 		}
 	}break;
+	case WM_LBUTTONDOWN:
+	{
+		SetWindowPos(hWnd, HWND_TOP, 100, 100, 500, 500,
+			SWP_NOMOVE | SWP_NOSIZE);
+		break;
+	}
+	case WM_RBUTTONDOWN:
+	{
+		SetWindowPos(hWnd, HWND_BOTTOM, 100, 100, 500, 500,
+			SWP_NOMOVE | SWP_NOSIZE);
+		break;
+	}
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
@@ -195,15 +246,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return 0;
 }
+
+// 정보 대화 상자의 메시지 처리기입니다.
+
+
 #endif  
 
-////////////////////////
-//6. 생성윈도우의 콜백 프로시저 구현
-LRESULT CALLBACK UserProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message)
-	{
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-}
